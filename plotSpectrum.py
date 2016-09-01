@@ -4,70 +4,54 @@ Created on Sun Aug 28 13:50:33 2016
 
 @author: sheraz
 """
-import mne
-import utils
-import numpy as np
-import matplotlib.pyplot as plt
 
-fig=plt.figure(figsize=(25,15)) 
-ax = fig.add_subplot(111)
+import utils
+import matplotlib.pyplot as plt
+fig=plt.figure('mainfig',figsize=(25,15)) 
 path='/autofs/space/megraid_research/MEG/tal/no_name/160829/'
 
 
 fname_raw=path+'erm.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,135)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=16)
-picks = utils.get_Vertex_Channels(raw)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=130)
-h1=ax.plot(freqs,psds, color=(1,0,0), linewidth=3, label='Empty Room')
+freqs,psds_erm=utils.plotPSD(fname_raw,tmax_crop=150.89,tmax_psd=150,
+                             nperseg=1,noverlap=90,multitapper=True,K=2)
 
-fname_raw=path+'plate.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,135)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=8)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=130)
-h2=ax.plot(freqs,psds, color=(0,1,1), linewidth=2, label='Copper Plate')
+#fname_raw=path+'plate.fif'
+#plotPSD(fname_raw, color=(0,1,1), label='Copper Plate')
+#
+#
+#fname_raw=path+'almuniumRing.fif'
+#plotPSD(fname_raw,color=(1,0,1),label='Aluminium Ring',tmax_crop=120.85,tmax_psd=120)
 
-fname_raw=path+'almuniumRing.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,120.85)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=8)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=120)
-h3=ax.plot(freqs,psds, color=(1,0,1), linewidth=2, label='Aluminium Ring')
 
 fname_raw=path+'salineSphere.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,135)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=16)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=130)
-h4=ax.plot(freqs,psds, color=(0,1,0), linewidth=3, label='Saline Sphere')
+freqs,psds_ss=utils.plotPSD(fname_raw,tmax_crop=150.89,tmax_psd=150,
+                            nperseg=1,noverlap=90,multitapper=True,K=2)
 
-fname_raw=path+'andyOutofMachine.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,135)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=16)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=130)
-h5=ax.plot(freqs,psds, color=(0,0,1), linewidth=3, label='Andy Out')
+
+#fname_raw=path+'andyOutofMachine.fif'
+#freqs,psds_ao=utils.plotPSD(fname_raw)
+
 
 fname_raw=path+'andyINEyesClosed.fif'
-raw=mne.io.read_raw_fif(fname_raw,preload=True)
-raw.crop(0,135)
-raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=16)
-freqs,psds=utils.getPSD(raw,picks,tmin=10,tmax=130)
-h6=ax.plot(freqs,psds, color=(0,0,0), linewidth=3, label='Andy In')
+freqs,psds_ai=utils.plotPSD(fname_raw,tmax_crop=150.89,tmax_psd=150,
+                            nperseg=1,noverlap=90,multitapper=True,K=2)
+
+plt.plot(freqs,psds_ss-psds_erm, color=(1,0,0), linewidth=3, label='Saline Sphere - Empty Room')
+plt.plot(freqs,psds_ai-psds_erm, color=(0,0,1), linewidth=3, label='Andy In - Empty Room')
 
 
 #Setting plot Parameters
-ax.set_xlim(100,2000)
-ax.set_ylim(0,2e-28)
-plt.yticks(fontsize=20, fontweight='bold')
-plt.xticks(fontsize=20, fontweight='bold')
-ax.set_xlabel('Frequency (Hz)',fontsize=24, fontweight='bold')
-ax.set_ylabel('Amplitude',fontsize=24, fontweight='bold')
-ax.legend(fontsize=24)
-ax.grid(True)
+
+plt.xlim(10,500)
+plt.ylim(0,.9e-12)
+plt.yticks(fontsize=20)
+plt.xticks(fontsize=20)
+plt.xlabel('Frequency (Hz)',fontsize=24)
+plt.ylabel(r'$\mathrm{\mathsf{Amplitude (T) \,  \backslash \, \sqrt{Hz}}}$',fontsize=24)
+plt.legend(fontsize=24)
+plt.grid(b=True, which='minor', color='0.65',linestyle='-')
+plt.minorticks_on()
 plt.tight_layout()
-fig.savefig('ALL_29_August_2016_zoom.png')
+plt.savefig('ALL_29_August_2016_zoom.png')
 
 
