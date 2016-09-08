@@ -57,7 +57,7 @@ def pmtm(y,fs,K):
 def get_Vertex_Channels(raw):
     selection=mne.read_selection('Vertex')
     selec=[item[0:3]+item[-4:] for item in selection]
-    picks = mne.pick_types(raw.info, meg='grad', eeg=False, eog=False,
+    picks = mne.pick_types(raw.info, meg='mag', eeg=False, eog=False,
                            stim=False, exclude='bads', selection=selec)
     return picks
 
@@ -80,33 +80,33 @@ def stmt(sig, frameSize, fs, K=4, overlapFac=0.75):
 def getPSD(raw,picks,tmin=10,tmax=130,nperseg=2500,noverlap=2000,weights=np.ones((102,))):
     start, stop = raw.time_as_index([tmin, tmax])                     
     data = raw[picks, start:(stop + 1)][0]
-    packedData=[stft(dat,nperseg, raw.info['sfreq'],overlapFac=float(noverlap)/nperseg) for dat in data]
-    packedData=np.array(packedData)
-    freqs=packedData[0,0]
-    dat=packedData[:,1]
-    data=[item for item in dat]
-    data=np.abs(data)
-    psds_in=np.mean(np.mean(data,axis=0),axis=0)
-    #data=np.transpose(np.transpose(data)*weights)
-    #freqs,psds_in =welch(np.mean(data,0),fs=raw.info['sfreq'],nperseg=nperseg,noverlap=noverlap)
-    #freqs,psds_in =stft(np.mean(data,0),nperseg, raw.info['sfreq'],
-    #                        overlapFac=float(noverlap)/nperseg)
-    #psds_in=np.mean(abs(psds_in),axis=0)
+#    packedData=[stft(dat,nperseg, raw.info['sfreq'],overlapFac=float(noverlap)/nperseg) for dat in data]
+#    packedData=np.array(packedData)
+#    freqs=packedData[0,0]
+#    dat=packedData[:,1]
+#    data=[item for item in dat]
+#    data=np.abs(data)
+#    psds_in=np.mean(np.mean(data,axis=0),axis=0)
+    data=np.transpose(np.transpose(data)*weights)
+    freqs,psds_in =stft(np.mean(data,0),nperseg, raw.info['sfreq'],
+                            overlapFac=float(noverlap)/nperseg)
+    psds_in=np.mean(abs(psds_in),axis=0)
     return freqs,psds_in
     
 
 def getMTSD(raw,picks,tmin=10,tmax=130,nperseg=2500,noverlap=2000,K=4,weights=np.ones((102,))):
     start, stop = raw.time_as_index([tmin, tmax])                     
     data = raw[picks, start:(stop + 1)][0]
-    data=(data.T+weights).T
+    #data=(data.T+weights).T
     freqs,psds_in =stmt(np.mean(data,0),nperseg,raw.info['sfreq'],
                         overlapFac=float(noverlap)/nperseg,K=K)  
     psds_in=np.sqrt(np.mean(psds_in,axis=0))                          
     return freqs,psds_in
 
-def plotPSD(fname_raw,tmin_crop=0,tmax_crop=135,n_jobs=16,tmin_psd=10,
-            tmax_psd=130,color=(1,0,0),linewidth=3,label='',nperseg=0.5,noverlap=75,show_plot=False,multitapper=False,NW=4,notch=False,weights=np.ones((102,))):
-                
+def plotPSD(fname_raw,tmin_crop=0,tmax_crop=135,n_jobs=16,tmin_psd=10,picks=None,
+            tmax_psd=130,color=(1,0,0),linewidth=3,label='',nperseg=0.5,noverlap=75,show_plot=False,
+multitapper=False,NW=4,notch=False,weights=np.ones((102,))):     
+       
     if  tmax_psd >  tmax_crop:
         tmax_psd = tmax_crop
     raw=mne.io.read_raw_fif(fname_raw,preload=False)
@@ -115,9 +115,12 @@ def plotPSD(fname_raw,tmin_crop=0,tmax_crop=135,n_jobs=16,tmin_psd=10,
         raw.notch_filter(np.arange(60, raw.info['sfreq']/2, 60), n_jobs=n_jobs)
     nperseg=int(nperseg*raw.info['sfreq'])
     noverlap=int((noverlap/100.)*nperseg)
-    picks = get_Vertex_Channels(raw)
-    #picks = mne.pick_types(raw.info, meg='mag', eeg=False, eog=False,
-    #                    stim=False, exclude='bads')
+    if picks=='all':
+        picks = mne.pick_types(raw.info, meg='mag', eeg=False, eog=False,
+                        stim=False, exclude='bads')
+    else:
+        picks = get_Vertex_Channels(raw)
+    
     if multitapper:
         freqs,psds=getMTSD(raw, picks, tmin=tmin_psd, 
                                  tmax=tmax_psd, nperseg=nperseg, noverlap=noverlap,K=NW,weights=weights)
